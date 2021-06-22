@@ -1,7 +1,12 @@
 package asia.remix.myapplication;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
@@ -11,7 +16,6 @@ import android.view.View;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity{
-	private static final int RECORD_REQUEST_CODE = 101;
 
 	private MediaProjectionManager mediaProjectionManager;
 	private MediaProjection mediaProjection;
@@ -27,18 +31,23 @@ public class MainActivity extends AppCompatActivity{
 	public void onClick( View view ){
 		Log.d( "■", "onClick()" );
 		Intent intent = mediaProjectionManager.createScreenCaptureIntent();
-		startActivityForResult( intent, RECORD_REQUEST_CODE );
+		activityResultLauncher.launch( intent );
 	}
 
-	@Override
-	protected void onActivityResult( int requestCode, int resultCode, Intent intent ){
-		if( requestCode == RECORD_REQUEST_CODE && resultCode == RESULT_OK ){
-			Log.d( "■", "onActivityResult()" );
-			mediaProjection = mediaProjectionManager.getMediaProjection( resultCode, intent );
-//			USE mediaProjection
-		}else{
-			Toast.makeText( this, "must Permission Screen Capture", Toast.LENGTH_SHORT ).show();
-			finish();
-		}
-	}
+	ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+		new ActivityResultContracts.StartActivityForResult(),
+		new ActivityResultCallback<ActivityResult>(){
+			@Override
+			public void onActivityResult( ActivityResult result ){
+				if( result.getResultCode() == Activity.RESULT_OK ){
+					Intent intent = result.getData();
+					mediaProjection = mediaProjectionManager.getMediaProjection( result.getResultCode(), intent );
+//					USE mediaProjection
+				}else{
+					Toast.makeText( MainActivity.this, "must Permission Screen Capture", Toast.LENGTH_SHORT ).show();
+					finish();
+				}
+			}
+		} 
+	);
 }
